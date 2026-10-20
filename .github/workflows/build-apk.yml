@@ -1,0 +1,38 @@
+
+name: Build PuzzleWorld APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'PuzzleWorld-Android.zip'
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get project files
+        uses: actions/checkout@v4
+
+      - name: Extract ZIP
+        run: |
+          mkdir project
+          unzip -o PuzzleWorld-Android.zip -d project
+          find project -name package.json -print
+
+      - name: Build APK
+        run: |
+          cd "$(dirname "$(find project -name package.json -print -quit)")"
+          npm install
+          npx cap sync android
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Save APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PuzzleWorld-APK
+          path: project/**/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
